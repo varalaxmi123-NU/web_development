@@ -1,18 +1,22 @@
 import { useState } from 'react';
 import { api } from '../api.js';
 import { PROJECT_COLORS, cx } from '../utils.js';
-import { Avatar, Icon, Modal, Spinner, useToast } from './ui.jsx';
+import { Avatar, Icon, Modal, Spinner, BrandLogo, useToast } from './ui.jsx';
 
 export default function Sidebar({ user, projects, route, onSignOut, onCreated }) {
   const [creating, setCreating] = useState(false);
 
   return (
     <aside className="sidebar">
-      <div className="brand"><span className="brand-mark" />TeamFlow</div>
+      <div className="sidebar-brand-header">
+        <BrandLogo size={26} />
+      </div>
 
       <nav className="nav">
         <a href="#/" className={cx('nav-item', route.view === 'dashboard' && 'active')}>
-          <Icon name="grid" /> Dashboard
+          {route.view === 'dashboard' && <span className="nav-active-pill" />}
+          <Icon name="grid" size={17} />
+          <span>Dashboard</span>
         </a>
       </nav>
 
@@ -26,28 +30,32 @@ export default function Sidebar({ user, projects, route, onSignOut, onCreated })
       <nav className="nav nav-projects">
         {!projects && <div className="nav-loading"><Spinner size={14} /></div>}
         {projects?.length === 0 && (
-          <button className="nav-empty" onClick={() => setCreating(true)}>Create your first project</button>
+          <button className="nav-empty" onClick={() => setCreating(true)}>+ Create your first project</button>
         )}
         {projects?.map((p) => {
           const pct = p.task_count ? Math.round((p.done_count / p.task_count) * 100) : 0;
+          const isActive = route.projectId === p.id;
           return (
-            <a key={p.id} href={`#/p/${p.id}`} className={cx('nav-item', route.projectId === p.id && 'active')}>
-              <span className="proj-dot" style={{ background: p.color }} />
+            <a key={p.id} href={`#/p/${p.id}`} className={cx('nav-item', isActive && 'active')}>
+              {isActive && <span className="nav-active-pill" />}
+              <span className="proj-dot" style={{ background: p.color, boxShadow: isActive ? `0 0 10px ${p.color}` : 'none' }} />
               <span className="nav-label">{p.name}</span>
-              <span className="nav-meta" title={`${p.done_count}/${p.task_count} done`}>{pct}%</span>
+              <span className="nav-meta-badge" title={`${p.done_count}/${p.task_count} done`}>{pct}%</span>
             </a>
           );
         })}
       </nav>
 
       <div className="sidebar-foot">
-        <Avatar user={user} size={30} />
-        <div className="me">
-          <strong>{user.name}</strong>
-          <span>{user.email}</span>
+        <div className="sidebar-user-pill">
+          <Avatar user={user} size={32} />
+          <div className="me">
+            <strong>{user.name}</strong>
+            <span>{user.email}</span>
+          </div>
         </div>
-        <button className="icon-btn" onClick={onSignOut} title="Sign out" aria-label="Sign out">
-          <Icon name="logout" />
+        <button className="icon-btn logout-btn" onClick={onSignOut} title="Sign out" aria-label="Sign out">
+          <Icon name="logout" size={17} />
         </button>
       </div>
 

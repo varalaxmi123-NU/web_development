@@ -35,28 +35,51 @@ export function todayStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** Days from today to a YYYY-MM-DD date (negative = past). */
+/** Days from today to a date (negative = past). */
 export function daysUntil(dateStr) {
   if (!dateStr) return null;
-  const [y, m, d] = dateStr.split('-').map(Number);
+  let d;
+  if (typeof dateStr === 'string' && dateStr.includes('-') && !dateStr.includes('T')) {
+    const parts = dateStr.split('-').map(Number);
+    if (parts.length >= 3 && !parts.some(isNaN)) {
+      d = new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+  }
+  if (!d || isNaN(d.getTime())) {
+    d = new Date(dateStr);
+  }
+  if (isNaN(d.getTime())) return null;
   const t = new Date();
-  const a = Date.UTC(y, m - 1, d);
+  const a = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
   const b = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
   return Math.round((a - b) / 86400000);
 }
 
 export function dueInfo(task) {
+  if (!task || !task.due_date) return null;
   const n = daysUntil(task.due_date);
   if (n === null) return null;
   const done = task.status === 'done';
-  const [y, m, d] = task.due_date.split('-').map(Number);
-  const label = new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  if (done) return { label, tone: 'muted' };
+  
+  let d;
+  if (typeof task.due_date === 'string' && task.due_date.includes('-') && !task.due_date.includes('T')) {
+    const parts = task.due_date.split('-').map(Number);
+    if (parts.length >= 3 && !parts.some(isNaN)) {
+      d = new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+  }
+  if (!d || isNaN(d.getTime())) {
+    d = new Date(task.due_date);
+  }
+  if (isNaN(d.getTime())) return null;
+
+  const label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  if (done) return { label: `Due ${label}`, tone: 'muted' };
   if (n < 0) return { label: n === -1 ? 'Yesterday' : `${-n}d overdue`, tone: 'danger', full: label };
-  if (n === 0) return { label: 'Today', tone: 'warn' };
-  if (n === 1) return { label: 'Tomorrow', tone: 'warn' };
-  if (n <= 7) return { label, tone: 'soon' };
-  return { label, tone: 'muted' };
+  if (n === 0) return { label: 'Due Today', tone: 'warn' };
+  if (n === 1) return { label: 'Due Tomorrow', tone: 'warn' };
+  if (n <= 7) return { label: `Due ${label}`, tone: 'soon' };
+  return { label: `Due ${label}`, tone: 'muted' };
 }
 
 export function timeAgo(ts) {

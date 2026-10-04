@@ -111,8 +111,8 @@ export default function Dashboard({ user }) {
               <Icon name="barChart" size={18} /> Task Velocity (Last 14 Days)
             </h2>
             <div className="legend">
-              <span><i className="lg-created" /> Created</span>
-              <span><i className="lg-done" /> Completed</span>
+              <span className="legend-badge lg-created-badge"><i className="lg-created" /> Created</span>
+              <span className="legend-badge lg-done-badge"><i className="lg-done" /> Completed</span>
             </div>
           </div>
           <TrendChart trend={trend} />
@@ -128,7 +128,9 @@ export default function Dashboard({ user }) {
             <span className="count-pill">{myTasks.length}</span>
           </div>
           {myTasks.length === 0 ? (
-            <Empty title="No tasks assigned to you" />
+            <Empty title="No tasks assigned to you">
+              All items are completed or on track! ✨
+            </Empty>
           ) : (
             <ul className="mytasks">
               {myTasks.map((t) => {
@@ -136,16 +138,22 @@ export default function Dashboard({ user }) {
                 return (
                   <li
                     key={t.id}
+                    className="mytask-item"
                     onClick={() => navigate(`/p/${t.project_id}/t/${t.id}`)}
                     tabIndex={0}
                     onKeyDown={(e) => e.key === 'Enter' && navigate(`/p/${t.project_id}/t/${t.id}`)}
                   >
                     <span className={`prio-bar prio-${t.priority}`} title={PRIORITY_LABEL[t.priority]} />
                     <div className="mt-main">
-                      <span className="mt-title">{t.title}</span>
+                      <div className="mt-top-row">
+                        <span className="mt-title">{t.title}</span>
+                        <span className={cx('status-badge', `st-${t.status}`)}>
+                          {STATUS_LABEL[t.status]}
+                        </span>
+                      </div>
                       <span className="mt-meta">
                         <span className="proj-dot" style={{ background: t.project_color }} />
-                        {t.project_name} · {STATUS_LABEL[t.status]}
+                        {t.project_name}
                       </span>
                     </div>
                     {due && <span className={`due due-${due.tone}`}>{due.label}</span>}
@@ -162,6 +170,7 @@ export default function Dashboard({ user }) {
             <h2>
               <Icon name="layers" size={18} /> Project Workspaces
             </h2>
+            <a href="#/" className="panel-link">View All</a>
           </div>
           {projects.length === 0 ? (
             <Empty title="No active projects">Create your first project from the sidebar.</Empty>
@@ -171,7 +180,7 @@ export default function Dashboard({ user }) {
                 const ppct = p.task_count ? Math.round((p.done_count / p.task_count) * 100) : 0;
                 return (
                   <a key={p.id} className="proj-row" href={`#/p/${p.id}`}>
-                    <span className="proj-dot lg" style={{ background: p.color }} />
+                    <span className="proj-dot lg" style={{ background: p.color, boxShadow: `0 0 10px ${p.color}40` }} />
                     <div className="pr-main">
                       <div className="pr-top">
                         <b>{p.name}</b>
@@ -211,7 +220,7 @@ export default function Dashboard({ user }) {
                     <Avatar user={w} size={26} />
                     <span className="wl-name">{w.name}</span>
                     <div className="wl-bar">
-                      <span style={{ width: `${(w.open / max) * 100}%`, background: w.color }} />
+                      <span style={{ width: `${(w.open / max) * 100}%`, background: w.color || 'var(--accent)' }} />
                     </div>
                     <span className="wl-num">
                       {w.open}
@@ -260,15 +269,23 @@ function greeting() {
 }
 
 function Tile({ label, value, sub, tone, meter, icon }) {
+  const isFeature = label === 'Overall Progress';
+  const iconClass = tone ? `tile-icon-bg tile-icon-${tone}` : 'tile-icon-bg tile-icon-primary';
   return (
-    <div className={cx('tile', tone && `tile-${tone}`)}>
+    <div className={cx('tile', isFeature && 'tile-feature', tone && `tile-${tone}`)}>
       <div className="tile-top">
         <span className="tile-label">{label}</span>
-        {icon && <Icon name={icon} size={16} className="tile-icon" />}
+        {icon && (
+          <div className={iconClass}>
+            <Icon name={icon} size={15} />
+          </div>
+        )}
       </div>
-      <span className="tile-value">{value}</span>
+      <div className="tile-value-row">
+        <span className="tile-value">{value}</span>
+      </div>
       {meter !== undefined && (
-        <div className="meter sm">
+        <div className="meter sm tile-meter">
           <span style={{ width: `${meter}%` }} />
         </div>
       )}
@@ -300,7 +317,7 @@ function StatusBar({ totals }) {
 
 function TrendChart({ trend }) {
   const [hover, setHover] = useState(null);
-  const W = 640, H = 150, P = { l: 24, r: 8, t: 10, b: 22 };
+  const W = 640, H = 160, P = { l: 28, r: 12, t: 16, b: 24 };
   const max = Math.max(2, ...trend.map((d) => Math.max(d.created, d.completed)));
   const iw = W - P.l - P.r, ih = H - P.t - P.b;
   const bw = iw / trend.length;
@@ -309,20 +326,32 @@ function TrendChart({ trend }) {
   return (
     <div className="trend">
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Tasks created and completed per day">
+        <defs>
+          <linearGradient id="grad-created" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" />
+            <stop offset="100%" stopColor="#818cf8" stopOpacity="0.75" />
+          </linearGradient>
+          <linearGradient id="grad-done" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#34d399" stopOpacity="0.75" />
+          </linearGradient>
+        </defs>
         {ticks.map((t) => (
           <g key={t}>
             <line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} className="grid" />
-            <text x={P.l - 6} y={y(t) + 3} className="axis" textAnchor="end">{t}</text>
+            <text x={P.l - 8} y={y(t) + 4} className="axis" textAnchor="end">{t}</text>
           </g>
         ))}
         {trend.map((d, i) => {
           const x = P.l + i * bw;
-          const w = Math.min(10, bw / 3);
+          const w = Math.min(12, Math.max(4, bw / 3));
+          const createdH = Math.max(3, P.t + ih - y(d.created));
+          const completedH = Math.max(3, P.t + ih - y(d.completed));
           return (
-            <g key={d.day} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
+            <g key={d.day} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} className="chart-bar-group">
               <rect x={x} y={P.t} width={bw} height={ih} className={hover === i ? 'hover-band on' : 'hover-band'} />
-              <rect x={x + bw / 2 - w - 1} y={y(d.created)} width={w} height={P.t + ih - y(d.created)} rx="2" className="bar-created" />
-              <rect x={x + bw / 2 + 1} y={y(d.completed)} width={w} height={P.t + ih - y(d.completed)} rx="2" className="bar-done" />
+              <rect x={x + bw / 2 - w - 1} y={y(d.created)} width={w} height={createdH} rx="3" ry="3" fill="url(#grad-created)" className="bar-created" />
+              <rect x={x + bw / 2 + 1} y={y(d.completed)} width={w} height={completedH} rx="3" ry="3" fill="url(#grad-done)" className="bar-done" />
               {(i % 2 === 1 || trend.length < 8) && (
                 <text x={x + bw / 2} y={H - 6} className="axis" textAnchor="middle">{d.day.slice(8)}</text>
               )}
@@ -333,7 +362,8 @@ function TrendChart({ trend }) {
       {hover !== null && (
         <div className="trend-tip" style={{ left: `${((hover + 0.5) / trend.length) * 100}%` }}>
           <b>{new Date(`${trend[hover].day}T00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</b>
-          <span>{trend[hover].created} created · {trend[hover].completed} completed</span>
+          <span><i className="tip-dot created" /> {trend[hover].created} created</span>
+          <span><i className="tip-dot completed" /> {trend[hover].completed} completed</span>
         </div>
       )}
     </div>
