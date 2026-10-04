@@ -30,15 +30,18 @@ let usePGlite = !process.env.DATABASE_URL && isLocal && serverless;
 
 async function getPGlite() {
   if (!pgliteInstance) {
-    if (serverless) {
-      const tmpDir = path.join(os.tmpdir(), 'pglite');
-      try { fs.mkdirSync(tmpDir, { recursive: true }); } catch { /* ignore */ }
-      pgliteInstance = new PGlite(tmpDir);
-      console.log(`⚡ [Serverless] Using PGlite database in /tmp at ${tmpDir}`);
-    } else {
-      try { fs.mkdirSync('./data', { recursive: true }); } catch { /* ignore */ }
-      pgliteInstance = new PGlite('./data/pglite');
-      console.log('⚡ Using embedded PGlite database fallback at ./data/pglite');
+    try {
+      if (serverless) {
+        pgliteInstance = new PGlite('memory://');
+        console.log('⚡ [Serverless] Using in-memory PGlite database (memory://)');
+      } else {
+        try { fs.mkdirSync('./data', { recursive: true }); } catch { /* ignore */ }
+        pgliteInstance = new PGlite('./data/pglite');
+        console.log('⚡ Using embedded PGlite database fallback at ./data/pglite');
+      }
+    } catch (e) {
+      console.warn('⚡ PGlite disk init failed, using in-memory fallback:', e.message);
+      pgliteInstance = new PGlite('memory://');
     }
   }
   return pgliteInstance;
@@ -56,7 +59,9 @@ function isConnError(err) {
     msg.includes('econnrefused') ||
     msg.includes('enotfound') ||
     msg.includes('etimedout') ||
-    msg.includes('connect')
+    msg.includes('connect') ||
+    msg.includes('locked') ||
+    msg.includes('pglite')
   );
 }
 

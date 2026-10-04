@@ -69,8 +69,12 @@ authRouter.post('/login', async (req, res, next) => {
     const password = String(req.body.password || '');
     const { rows } = await query('SELECT * FROM users WHERE email = $1', [email]);
     const user = rows[0];
-    if (!user || !(await bcrypt.compare(password, user.password_hash)))
-      return res.status(401).json({ error: 'Incorrect email or password' });
+    if (!user) {
+      return res.status(401).json({ error: 'No account found with this email. Please click "Create account" above to sign up!' });
+    }
+    if (!(await bcrypt.compare(password, user.password_hash))) {
+      return res.status(401).json({ error: 'Incorrect password' });
+    }
     res.json({ token: signToken(user), user: publicUser(user) });
   } catch (err) {
     next(err);
