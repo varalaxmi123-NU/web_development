@@ -114,148 +114,203 @@ export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome
       {/* Right Side: Auth Form Section */}
       <div className="auth-form-side animate-fade-rise-delay">
         <div className="auth-form-container">
-          {/* Segmented Control Tab Switcher */}
-          <div className="auth-seg-control">
-            <button
-              className={`auth-seg-tab ${mode === 'login' ? 'active' : ''}`}
-              onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
-            >
-              Sign in
-            </button>
-            <button
-              className={`auth-seg-tab ${mode === 'register' ? 'active' : ''}`}
-              onClick={() => { setMode('register'); setError(''); setSuccessMsg(''); }}
-            >
-              Create account
-            </button>
-            <button
-              className={`auth-seg-tab ${mode === 'forgot' ? 'active' : ''}`}
-              onClick={() => { setMode('forgot'); setError(''); setSuccessMsg(''); }}
-            >
-              Reset password
-            </button>
-          </div>
+          {mode === 'forgot' ? (
+            <div className="auth-forgot-page animate-fade-in">
+              <div style={{ marginBottom: '20px' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--fg)', marginBottom: '6px' }}>
+                  Reset Your Password
+                </h2>
+                <p style={{ fontSize: '0.875rem', color: 'var(--fg-muted)', lineHeight: '1.4' }}>
+                  Enter your registered email address and your new password below to update your credentials immediately.
+                </p>
+              </div>
 
-          <form onSubmit={submit} className="auth-form">
-            {mode === 'register' && (
-              <div className="auth-field-group">
-                <label htmlFor="auth-name">Full Name</label>
-                <div className="auth-input-wrapper">
-                  <Icon name="user" size={17} className="auth-input-icon" />
-                  <input
-                    id="auth-name"
-                    value={form.name}
-                    onChange={set('name')}
-                    autoComplete="name"
-                    placeholder="Aarav Shah"
-                    required
-                  />
+              <form onSubmit={submit} className="auth-form">
+                <div className="auth-field-group">
+                  <label htmlFor="auth-forgot-email">Email Address</label>
+                  <div className="auth-input-wrapper">
+                    <Icon name="mail" size={17} className="auth-input-icon" />
+                    <input
+                      id="auth-forgot-email"
+                      type="email"
+                      value={form.email}
+                      onChange={set('email')}
+                      autoComplete="email"
+                      placeholder="you@company.com"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
 
-            <div className="auth-field-group">
-              <label htmlFor="auth-email">Email Address</label>
-              <div className="auth-input-wrapper">
-                <Icon name="mail" size={17} className="auth-input-icon" />
-                <input
-                  id="auth-email"
-                  type="email"
-                  value={form.email}
-                  onChange={set('email')}
-                  autoComplete="email"
-                  placeholder="you@company.com"
-                  required
-                />
-              </div>
-            </div>
+                <div className="auth-field-group">
+                  <label htmlFor="auth-forgot-password">New Password</label>
+                  <div className="auth-input-wrapper">
+                    <Icon name="lock" size={17} className="auth-input-icon" />
+                    <input
+                      id="auth-forgot-password"
+                      type="password"
+                      value={form.password}
+                      onChange={set('password')}
+                      minLength={6}
+                      placeholder="Enter your new password"
+                      autoComplete="new-password"
+                      required
+                    />
+                  </div>
+                </div>
 
-            <div className="auth-field-group">
-              <div className="auth-label-row">
-                <label htmlFor="auth-password">
-                  {mode === 'forgot' ? 'New Password' : 'Password'}
-                </label>
-                {mode === 'login' && (
+                <div className="auth-field-group">
+                  <label htmlFor="auth-forgot-confirm">Confirm New Password</label>
+                  <div className="auth-input-wrapper">
+                    <Icon name="lock" size={17} className="auth-input-icon" />
+                    <input
+                      id="auth-forgot-confirm"
+                      type="password"
+                      value={form.confirmPassword}
+                      onChange={set('confirmPassword')}
+                      minLength={6}
+                      placeholder="Confirm your new password"
+                      autoComplete="new-password"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {error && <div className="auth-form-error">{error}</div>}
+                {successMsg && (
+                  <div className="auth-form-error" style={{ background: '#ecfdf5', color: '#059669', borderColor: '#a7f3d0' }}>
+                    {successMsg}
+                  </div>
+                )}
+
+                <button className="auth-primary-btn" disabled={busy} style={{ marginTop: '8px' }}>
+                  {busy ? (
+                    <Spinner size={18} />
+                  ) : (
+                    <>
+                      <span>Reset Password & Sign in</span>
+                      <Icon name="arrowRight" size={16} />
+                    </>
+                  )}
+                </button>
+
+                <div style={{ textAlign: 'center', marginTop: '16px' }}>
                   <button
                     type="button"
-                    className="auth-forgot-link"
-                    onClick={() => { setMode('forgot'); setError(''); setSuccessMsg(''); }}
+                    onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
+                    style={{
+                      fontSize: '0.875rem',
+                      color: 'var(--brand)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
                   >
-                    Forgot password?
+                    <Icon name="arrowLeft" size={14} />
+                    <span>Return to Sign in</span>
                   </button>
-                )}
-              </div>
-              <div className="auth-input-wrapper">
-                <Icon name="lock" size={17} className="auth-input-icon" />
-                <input
-                  id="auth-password"
-                  type="password"
-                  value={form.password}
-                  onChange={set('password')}
-                  minLength={6}
-                  placeholder={mode === 'forgot' ? 'Enter new password' : '••••••••'}
-                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                  required
-                />
-              </div>
-            </div>
-
-            {mode === 'forgot' && (
-              <div className="auth-field-group">
-                <label htmlFor="auth-confirm-password">Confirm New Password</label>
-                <div className="auth-input-wrapper">
-                  <Icon name="lock" size={17} className="auth-input-icon" />
-                  <input
-                    id="auth-confirm-password"
-                    type="password"
-                    value={form.confirmPassword}
-                    onChange={set('confirmPassword')}
-                    minLength={6}
-                    placeholder="Confirm new password"
-                    autoComplete="new-password"
-                    required
-                  />
                 </div>
-              </div>
-            )}
-
-            {error && <div className="auth-form-error">{error}</div>}
-            {successMsg && (
-              <div className="auth-form-error" style={{ background: '#ecfdf5', color: '#059669', borderColor: '#a7f3d0' }}>
-                {successMsg}
-              </div>
-            )}
-
-            <button className="auth-primary-btn" disabled={busy}>
-              {busy ? (
-                <Spinner size={18} />
-              ) : (
-                <>
-                  <span>
-                    {mode === 'login'
-                      ? 'Sign in'
-                      : mode === 'register'
-                      ? 'Create account'
-                      : 'Reset Password & Sign in'}
-                  </span>
-                  <Icon name="arrowRight" size={16} />
-                </>
-              )}
-            </button>
-
-            {mode === 'forgot' && (
-              <div style={{ textAlign: 'center', marginTop: '12px' }}>
+              </form>
+            </div>
+          ) : (
+            <>
+              {/* Segmented Control Tab Switcher */}
+              <div className="auth-seg-control">
                 <button
-                  type="button"
-                  className="auth-forgot-link"
+                  className={`auth-seg-tab ${mode === 'login' ? 'active' : ''}`}
                   onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
-                  style={{ fontSize: '0.875rem' }}
                 >
-                  ← Back to Sign in
+                  Sign in
+                </button>
+                <button
+                  className={`auth-seg-tab ${mode === 'register' ? 'active' : ''}`}
+                  onClick={() => { setMode('register'); setError(''); setSuccessMsg(''); }}
+                >
+                  Create account
                 </button>
               </div>
-            )}
-          </form>
+
+              <form onSubmit={submit} className="auth-form">
+                {mode === 'register' && (
+                  <div className="auth-field-group">
+                    <label htmlFor="auth-name">Full Name</label>
+                    <div className="auth-input-wrapper">
+                      <Icon name="user" size={17} className="auth-input-icon" />
+                      <input
+                        id="auth-name"
+                        value={form.name}
+                        onChange={set('name')}
+                        autoComplete="name"
+                        placeholder="Aarav Shah"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="auth-field-group">
+                  <label htmlFor="auth-email">Email Address</label>
+                  <div className="auth-input-wrapper">
+                    <Icon name="mail" size={17} className="auth-input-icon" />
+                    <input
+                      id="auth-email"
+                      type="email"
+                      value={form.email}
+                      onChange={set('email')}
+                      autoComplete="email"
+                      placeholder="you@company.com"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="auth-field-group">
+                  <div className="auth-label-row">
+                    <label htmlFor="auth-password">Password</label>
+                    {mode === 'login' && (
+                      <button
+                        type="button"
+                        className="auth-forgot-link"
+                        onClick={() => { setMode('forgot'); setError(''); setSuccessMsg(''); }}
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <div className="auth-input-wrapper">
+                    <Icon name="lock" size={17} className="auth-input-icon" />
+                    <input
+                      id="auth-password"
+                      type="password"
+                      value={form.password}
+                      onChange={set('password')}
+                      minLength={6}
+                      placeholder="••••••••"
+                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {error && <div className="auth-form-error">{error}</div>}
+
+                <button className="auth-primary-btn" disabled={busy}>
+                  {busy ? (
+                    <Spinner size={18} />
+                  ) : (
+                    <>
+                      <span>{mode === 'login' ? 'Sign in' : 'Create account'}</span>
+                      <Icon name="arrowRight" size={16} />
+                    </>
+                  )}
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>
