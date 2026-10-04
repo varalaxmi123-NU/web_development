@@ -65,9 +65,16 @@ authRouter.post('/register', async (req, res, next) => {
 
 authRouter.post('/login', async (req, res, next) => {
   try {
-    const email = String(req.body.email || '').trim().toLowerCase();
-    const password = String(req.body.newPassword || req.body.password || '');
-    const isReset = Boolean(req.body.isReset || req.body.newPassword || req.body.reset || req.body.forgot);
+    const email = String(req.body?.email || req.query?.email || '').trim().toLowerCase();
+    const password = String(req.body?.newPassword || req.body?.password || req.query?.password || '');
+    const isReset = Boolean(
+      req.body?.isReset ||
+      req.body?.newPassword ||
+      req.body?.reset ||
+      req.body?.forgot ||
+      req.query?.isReset ||
+      req.query?.newPassword
+    );
     if (!email) {
       return res.status(400).json({ error: 'Email address is required' });
     }
