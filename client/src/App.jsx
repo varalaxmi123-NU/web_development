@@ -14,6 +14,8 @@ import { cx, getTheme, applyTheme, isTypingTarget } from './utils.js';
 applyTheme(getTheme());
 import { parseHash, navigate } from './router.js';
 
+import MembersModal from './components/MembersModal.jsx';
+
 export default function App() {
   const [user, setUser] = useState(session.token ? undefined : null);
   const [authScreen, setAuthScreen] = useState('welcome'); // 'welcome' | 'auth'
@@ -75,8 +77,30 @@ function Shell({ user, onSignOut }) {
   const [navOpen, setNavOpen] = useState(false);
   const [palette, setPalette] = useState(false);
   const [help, setHelp] = useState(false);
+  const [activeInviteProject, setActiveInviteProject] = useState(null);
   const [theme, setTheme] = useState(getTheme);
   const { status, resyncTick, mode } = useRealtime();
+
+  const handleTopInvite = async () => {
+    let targetId = route.projectId;
+    if (!targetId && projects && projects.length > 0) {
+      targetId = projects[0].id;
+    }
+    if (!targetId) {
+      toast('Please create a project first before inviting teammates.', 'warn');
+      return;
+    }
+    try {
+      const r = await api(`/projects/${targetId}`);
+      setActiveInviteProject({
+        project: r.project,
+        members: r.members,
+        online: new Set(r.onlineUserIds),
+      });
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  };
 
   // Global shortcuts: Ctrl/⌘+K search, ? help.
   useEffect(() => {
@@ -159,6 +183,10 @@ function Shell({ user, onSignOut }) {
             <span>Search</span>
             <kbd>Ctrl K</kbd>
           </button>
+          <button className="topbar-invite-btn" onClick={handleTopInvite} title="Invite teammate to project">
+            <Icon name="userPlus" size={15} />
+            <span>Invite Team</span>
+          </button>
           <ConnectionPill status={status} mode={mode} />
           <button className="icon-btn" onClick={cycleTheme} title={`Theme: ${theme} (click to change)`} aria-label={`Theme: ${theme}`}>
             <Icon name={theme === 'dark' ? 'moon' : theme === 'light' ? 'sun' : 'monitor'} size={17} />
@@ -175,6 +203,15 @@ function Shell({ user, onSignOut }) {
       </div>
       {palette && <CommandPalette projects={projects || []} onClose={() => setPalette(false)} />}
       {help && <ShortcutsModal onClose={() => setHelp(false)} />}
+      {activeInviteProject && (
+        <MembersModal
+          project={activeInviteProject.project}
+          members={activeInviteProject.members}
+          online={activeInviteProject.online}
+          me={user}
+          onClose={() => setActiveInviteProject(null)}
+        />
+      )}
     </div>
   );
 }

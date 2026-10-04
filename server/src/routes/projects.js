@@ -135,9 +135,10 @@ projectsRouter.post('/:id/members', h(async (req, res) => {
   const projectId = req.params.id;
   await requireMember(projectId, req.user.id);
   const email = String(req.body.email || '').trim().toLowerCase();
-  const { rows } = await query('SELECT id, name, email, color FROM users WHERE email = $1', [email]);
+  if (!email) throw new HttpError(400, 'Email address is required');
+  const { rows } = await query('SELECT id, name, email, color FROM users WHERE LOWER(email) = LOWER($1)', [email]);
   const user = rows[0];
-  if (!user) throw new HttpError(404, 'No account with that email yet. Ask them to sign up first.');
+  if (!user) throw new HttpError(404, `No registered account found for "${email}". Please ask them to sign up first.`);
 
   const result = await tx(async (c) => {
     const ins = await c.query(
