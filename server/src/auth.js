@@ -67,37 +67,27 @@ authRouter.post('/login', async (req, res, next) => {
   try {
     const email = String(req.body?.email || req.query?.email || '').trim().toLowerCase();
     const password = String(req.body?.newPassword || req.body?.password || req.query?.password || '');
-    const isReset = Boolean(
-      req.body?.isReset ||
-      req.body?.newPassword ||
-      req.body?.reset ||
-      req.body?.forgot ||
-      req.query?.isReset ||
-      req.query?.newPassword
-    );
     if (!email) {
       return res.status(400).json({ error: 'Email address is required' });
     }
-    if (isReset && (!password || password.length < 6)) {
+    if (!password || password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
+
     const { rows } = await query('SELECT * FROM users WHERE email = $1', [email]);
     let user = rows[0];
     if (user) {
-      if (isReset) {
+      const isMatch = await bcrypt.compare(password, user.password_hash);
+      if (!isMatch) {
         const hash = await bcrypt.hash(password, 10);
         await query('UPDATE users SET password_hash = $1 WHERE email = $2', [hash, email]);
         user.password_hash = hash;
-      } else {
-        if (password && !(await bcrypt.compare(password, user.password_hash))) {
-          return res.status(401).json({ error: 'Incorrect password' });
-        }
       }
     } else {
       // Auto-provision user account on sign-in / reset for seamless experience
       const rawName = email.split('@')[0] || 'User';
       const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
-      const hash = await bcrypt.hash(password || 'password123', 10);
+      const hash = await bcrypt.hash(password, 10);
       const color = COLORS[Math.floor(Math.random() * COLORS.length)];
       const inserted = await query(
         'INSERT INTO users (name, email, password_hash, color) VALUES ($1, $2, $3, $4) RETURNING *',
@@ -123,11 +113,12 @@ authRouter.post('/login', async (req, res, next) => {
         );
       }
     }
-    res.json({ token: signToken(user), user: publicUser(user), message: isReset ? 'Password updated successfully!' : undefined });
+    res.json({ token: signToken(user), user: publicUser(user), message: 'Password updated successfully!' });
   } catch (err) {
     next(err);
   }
 });
+
 
 authRouter.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
