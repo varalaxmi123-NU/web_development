@@ -2630,6 +2630,81 @@ kbd {
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
 }
 
+/* Standalone Dedicated Forgot Password Page */
+.forgot-page-wrapper {
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--text);
+  padding: 24px;
+  font-family: 'Inter', var(--font-body), sans-serif;
+}
+
+.forgot-page-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 36px;
+  box-shadow: var(--shadow-lg);
+}
+
+.forgot-logo-row {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.forgot-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.forgot-subtitle {
+  font-size: 14px;
+  color: var(--text-3);
+  line-height: 1.5;
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.forgot-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.forgot-back-row {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.forgot-back-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s ease;
+}
+
+.forgot-back-btn:hover {
+  opacity: 0.85;
+}
+
+
 
 
 

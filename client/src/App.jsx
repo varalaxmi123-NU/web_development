@@ -6,6 +6,7 @@ import NotificationsBell from './components/NotificationsBell.jsx';
 import CommandPalette from './components/CommandPalette.jsx';
 import WelcomePage from './components/WelcomePage.jsx';
 import AuthPage from './components/AuthPage.jsx';
+import ForgotPasswordPage from './components/ForgotPasswordPage.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import ProjectView from './components/ProjectView.jsx';
@@ -18,7 +19,7 @@ import MembersModal from './components/MembersModal.jsx';
 
 export default function App() {
   const [user, setUser] = useState(session.token ? undefined : null);
-  const [authScreen, setAuthScreen] = useState('welcome'); // 'welcome' | 'auth'
+  const [authScreen, setAuthScreen] = useState('welcome'); // 'welcome' | 'auth' | 'forgot'
   const [authMode, setAuthMode] = useState('login');
 
   useEffect(() => {
@@ -52,14 +53,27 @@ export default function App() {
       ) : !user ? (
         authScreen === 'welcome' ? (
           <WelcomePage
-            onEnterApp={(mode) => { setAuthMode(mode || 'login'); setAuthScreen('auth'); }}
+            onEnterApp={(mode) => {
+              if (mode === 'forgot') {
+                setAuthScreen('forgot');
+              } else {
+                setAuthMode(mode || 'login');
+                setAuthScreen('auth');
+              }
+            }}
             onQuickDemo={handleQuickDemo}
+          />
+        ) : authScreen === 'forgot' ? (
+          <ForgotPasswordPage
+            onAuthed={(u, token) => { session.set(token); setUser(u); }}
+            onBackToLogin={() => { setAuthMode('login'); setAuthScreen('auth'); }}
           />
         ) : (
           <AuthPage
             initialMode={authMode}
             onAuthed={(u, token) => { session.set(token); setUser(u); }}
             onBackToHome={() => setAuthScreen('welcome')}
+            onOpenForgot={() => setAuthScreen('forgot')}
           />
         )
       ) : (

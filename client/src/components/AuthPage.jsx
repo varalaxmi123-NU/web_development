@@ -2,12 +2,22 @@ import { useState } from 'react';
 import { api } from '../api.js';
 import { Icon, Spinner, BrandLogo } from './ui.jsx';
 
-export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome }) {
+export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome, onOpenForgot }) {
   const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'forgot'
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const handleForgotClick = () => {
+    if (onOpenForgot) {
+      onOpenForgot();
+    } else {
+      setMode('forgot');
+      setError('');
+      setSuccessMsg('');
+    }
+  };
 
   const submit = async (e) => {
     e?.preventDefault();
@@ -275,7 +285,7 @@ export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome
                       <button
                         type="button"
                         className="auth-forgot-link"
-                        onClick={() => { setMode('forgot'); setError(''); setSuccessMsg(''); }}
+                        onClick={handleForgotClick}
                       >
                         Forgot password?
                       </button>
