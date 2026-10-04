@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api.js';
-import { AvatarStack, Icon, Spinner, BrandLogo } from './ui.jsx';
-
-const PREVIEW_USERS = [
-  { name: 'Aarav Shah', email: 'aarav@demo.dev', color: '#6366f1' },
-  { name: 'Priya Nair', email: 'priya@demo.dev', color: '#ec4899' },
-  { name: 'Rohan Mehta', email: 'rohan@demo.dev', color: '#f59e0b' },
-];
+import { Icon, Spinner, BrandLogo } from './ui.jsx';
 
 export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome }) {
   const [mode, setMode] = useState(initialMode);
@@ -40,13 +34,17 @@ export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome
 
         <div className="auth-hero-content">
           {onBackToHome && (
-            <button className="auth-back-link" onClick={onBackToHome}>
-              <Icon name="arrowLeft" size={15} />
-              <span>Back to Welcome Screen</span>
-            </button>
+            <div className="auth-top-nav">
+              <button className="auth-back-link" onClick={onBackToHome}>
+                <Icon name="arrowLeft" size={15} />
+                <span>Back to Welcome Screen</span>
+              </button>
+            </div>
           )}
 
-          <BrandLogo size={36} className="auth-brand-logo" />
+          <div className="auth-logo-row">
+            <BrandLogo size={36} />
+          </div>
 
           <h1 className="auth-hero-heading">
             Plan, build and ship together, <br />
@@ -87,13 +85,12 @@ export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome
               <span className="auth-live-editing">
                 <Icon name="edit" size={13} /> Priya is editing description…
               </span>
-              <AvatarStack users={PREVIEW_USERS} size={24} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Right Side: Sleek Auth Form Section */}
+      {/* Right Side: Auth Form Section */}
       <div className="auth-form-side animate-fade-rise-delay">
         <div className="auth-form-container">
           {/* Segmented Control Tab Switcher */}
@@ -140,7 +137,7 @@ export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome
                   value={form.email}
                   onChange={set('email')}
                   autoComplete="email"
-                  placeholder="aarav@demo.dev"
+                  placeholder="you@company.com"
                   required
                 />
               </div>
@@ -153,7 +150,7 @@ export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome
                   <button
                     type="button"
                     className="auth-forgot-link"
-                    onClick={() => alert('Demo account: Use password "demo1234" to sign in.')}
+                    onClick={() => alert('Password reset instructions have been sent to your email.')}
                   >
                     Forgot password?
                   </button>
