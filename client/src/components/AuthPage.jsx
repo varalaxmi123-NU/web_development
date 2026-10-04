@@ -128,11 +128,12 @@ export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome
             >
               Create account
             </button>
-            {mode === 'forgot' && (
-              <button className="auth-seg-tab active">
-                Reset Password
-              </button>
-            )}
+            <button
+              className={`auth-seg-tab ${mode === 'forgot' ? 'active' : ''}`}
+              onClick={() => { setMode('forgot'); setError(''); setSuccessMsg(''); }}
+            >
+              Reset password
+            </button>
           </div>
 
           <form onSubmit={submit} className="auth-form">
