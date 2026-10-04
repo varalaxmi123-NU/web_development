@@ -90,7 +90,7 @@ export function ToastProvider({ children }) {
   );
 }
 
-// ---- Icons (inline, no dependency) ---------------------------------------------
+// ---- Icons (inline, SVG vector paths) ---------------------------------------
 
 const PATHS = {
   x: 'M5 5l10 10M15 5L5 15',
@@ -124,9 +124,24 @@ const PATHS = {
   keyboard: 'M2 5h16v10H2zM5 8h.01M8 8h.01M11 8h.01M14 8h.01M5 11h.01M15 11h.01M7.5 12h5',
   cloudOff: 'M3 3l14 14M8 5.2A5 5 0 0115 9h.5a3 3 0 011.3 5.7M13 15H5.5a3.5 3.5 0 01-1-6.9',
   image: 'M3 4h14v12H3zM3 13l4-4 3 3 2-2 5 5M13 7.5h.01',
+  zap: 'M11 2L3 11h6l-1 7 8-9h-6l1-7z',
+  arrowRight: 'M4 10h12M12 4l4 6-4 6',
+  arrowLeft: 'M16 10H4M8 4l-4 6 4 6',
+  shield: 'M10 2l7 3v6c0 4.5-3.5 7.5-7 9-3.5-1.5-7-4.5-7-9V5l7-3z',
+  atSign: 'M12 10a2 2 0 11-4 0 2 2 0 014 0z M14 10v1.5a2.5 2.5 0 004 0V10a8 8 0 10-2.4 5.6',
+  checkSquare: 'M3 5h14v12H3zM6 10l3 3 5-6',
+  wifiOff: 'M2 2l16 16M6 8a9 9 0 0110.8 0M8.5 11.5a5 5 0 015 0',
+  barChart: 'M4 17v-4M8 17V7M12 17V3M16 17v-7',
+  layers: 'M2 7l8-4 8 4-8 4-8-4zM2 11l8 4 8-4M2 15l8 4 8-4',
+  sparkles: 'M10 2l1.5 4.5L16 8l-4.5 1.5L10 14l-1.5-4.5L4 8l4.5-1.5z',
+  clock: 'M10 18a8 8 0 100-16 8 8 0 000 16zM10 6v4.5l3 1.5',
+  trendingUp: 'M2 14l5-5 4 4 7-7M13 6h5v5',
+  target: 'M10 18a8 8 0 100-16 8 8 0 000 16zM10 14a4 4 0 100-8 4 4 0 000 8z',
+  pieChart: 'M17 10a7 7 0 11-7-7v7h7z M12 3a7 7 0 016.9 6H12V3z',
 };
 
 export function Icon({ name, size = 16, className }) {
+  const path = PATHS[name] || PATHS.zap;
   return (
     <svg
       className={cx('icon', className)}
@@ -140,8 +155,29 @@ export function Icon({ name, size = 16, className }) {
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d={PATHS[name]} />
+      <path d={path} />
     </svg>
+  );
+}
+
+// Brand Logo Component
+export function BrandLogo({ size = 28, className }) {
+  return (
+    <div className={cx('brand-logo-wrap', className)}>
+      <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="9" fill="url(#brand-grad)" />
+        <path d="M9 16L15 22L23 10" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M15 10L21 16" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.7" />
+        <defs>
+          <linearGradient id="brand-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#6366F1" />
+            <stop offset="0.5" stopColor="#3B82F6" />
+            <stop offset="1" stopColor="#EC4899" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <span className="brand-title-text">TeamFlow</span>
+    </div>
   );
 }
 

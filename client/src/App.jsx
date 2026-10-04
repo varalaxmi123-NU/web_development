@@ -4,6 +4,7 @@ import { RealtimeProvider, useRealtime, useSocketEvents } from './realtime.jsx';
 import { ToastProvider, useToast, Spinner, Icon, Avatar, Modal } from './components/ui.jsx';
 import NotificationsBell from './components/NotificationsBell.jsx';
 import CommandPalette from './components/CommandPalette.jsx';
+import WelcomePage from './components/WelcomePage.jsx';
 import AuthPage from './components/AuthPage.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import Dashboard from './components/Dashboard.jsx';
@@ -15,6 +16,8 @@ import { parseHash, navigate } from './router.js';
 
 export default function App() {
   const [user, setUser] = useState(session.token ? undefined : null);
+  const [authScreen, setAuthScreen] = useState('welcome'); // 'welcome' | 'auth'
+  const [authMode, setAuthMode] = useState('login');
 
   useEffect(() => {
     if (!session.token) return;
@@ -27,14 +30,36 @@ export default function App() {
     return () => window.removeEventListener('teamflow:signed-out', out);
   }, []);
 
-  const signOut = () => { session.clear(); setUser(null); navigate('/'); };
+  const signOut = () => { session.clear(); setUser(null); setAuthScreen('welcome'); navigate('/'); };
+
+  const handleQuickDemo = async (email, password) => {
+    try {
+      const r = await api('/auth/login', { method: 'POST', body: { email, password } });
+      session.set(r.token);
+      setUser(r.user);
+    } catch (err) {
+      setAuthMode('login');
+      setAuthScreen('auth');
+    }
+  };
 
   return (
     <ToastProvider>
       {user === undefined ? (
         <div className="splash"><Spinner size={28} /></div>
       ) : !user ? (
-        <AuthPage onAuthed={(u, token) => { session.set(token); setUser(u); }} />
+        authScreen === 'welcome' ? (
+          <WelcomePage
+            onEnterApp={(mode) => { setAuthMode(mode || 'login'); setAuthScreen('auth'); }}
+            onQuickDemo={handleQuickDemo}
+          />
+        ) : (
+          <AuthPage
+            initialMode={authMode}
+            onAuthed={(u, token) => { session.set(token); setUser(u); }}
+            onBackToHome={() => setAuthScreen('welcome')}
+          />
+        )
       ) : (
         <RealtimeProvider user={user}>
           <Shell user={user} onSignOut={signOut} />

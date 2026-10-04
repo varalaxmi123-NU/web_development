@@ -1,54 +1,108 @@
 import pg from 'pg';
+import { PGlite } from '@electric-sql/pglite';
+import fs from 'node:fs';
 import schema from './schema.js';
 
 // Return DATE columns as 'YYYY-MM-DD' strings instead of JS Dates, so they
 // compare cleanly in the merge engine and don't shift across time zones.
 pg.types.setTypeParser(1082, (v) => v);
 
-// Works with local PostgreSQL (Docker) and hosted Postgres such as Supabase.
-// Hosted databases require SSL; any ?sslmode=... in the URL is stripped so the
-// ssl option below applies consistently.
 const DB_URL = (process.env.DATABASE_URL || 'postgres://teamflow:teamflow@localhost:5432/teamflow')
   .replace(/([?&])sslmode=[^&]*&?/, '$1')
   .replace(/[?&]$/, '');
 const isLocal = /@(localhost|127\.0\.0\.1|db)(:|\/)/.test(DB_URL);
 const serverless = Boolean(process.env.VERCEL);
 
-export const pool = new pg.Pool({
+const pgPool = new pg.Pool({
   connectionString: DB_URL,
-  // Serverless functions run many small instances: keep each one's pool tiny.
   max: serverless ? 3 : 10,
   ssl: isLocal ? false : { rejectUnauthorized: false },
   idleTimeoutMillis: serverless ? 10000 : 30000,
-  connectionTimeoutMillis: 10000,
+  connectionTimeoutMillis: 3000,
 });
 
-// Hosted poolers (e.g. Supabase) may close idle connections. Without this
-// handler, that error would crash the server; the pool simply reconnects.
-pool.on('error', (err) => console.warn('Postgres idle client error (will reconnect):', err.message));
+pgPool.on('error', (err) => console.warn('Postgres idle client error:', err.message));
 
-export async function query(text, params) {
-  return pool.query(text, params);
+let pgliteInstance = null;
+let usePGlite = false;
+
+async function getPGlite() {
+  if (!pgliteInstance) {
+    fs.mkdirSync('./data', { recursive: true });
+    pgliteInstance = new PGlite('./data/pglite');
+    console.log('⚡ Using embedded PGlite database fallback at ./data/pglite');
+  }
+  return pgliteInstance;
 }
 
-/** Run fn(client) inside a transaction; commits on success, rolls back on throw. */
-export async function tx(fn) {
-  const client = await pool.connect();
+export async function query(text, params) {
+  if (usePGlite) {
+    const db = await getPGlite();
+    return db.query(text, params);
+  }
   try {
-    await client.query('BEGIN');
-    const result = await fn(client);
-    await client.query('COMMIT');
-    return result;
+    return await pgPool.query(text, params);
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
+    if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || (err.message && err.message.includes('ECONNREFUSED'))) {
+      usePGlite = true;
+      const db = await getPGlite();
+      await db.exec(schema);
+      return db.query(text, params);
+    }
     throw err;
-  } finally {
-    client.release();
+  }
+}
+
+export async function tx(fn) {
+  if (usePGlite) {
+    const db = await getPGlite();
+    return db.transaction(async (txClient) => {
+      return fn({
+        query: (text, params) => txClient.query(text, params),
+      });
+    });
+  }
+  try {
+    const client = await pgPool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await fn(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || (err.message && err.message.includes('ECONNREFUSED'))) {
+      usePGlite = true;
+      const db = await getPGlite();
+      await db.exec(schema);
+      return tx(fn);
+    }
+    throw err;
   }
 }
 
 export async function migrate() {
-  await pool.query(schema);
+  if (usePGlite) {
+    const db = await getPGlite();
+    await db.exec(schema);
+    return;
+  }
+  try {
+    await pgPool.query(schema);
+  } catch (err) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || (err.message && err.message.includes('ECONNREFUSED'))) {
+      usePGlite = true;
+      const db = await getPGlite();
+      await db.exec(schema);
+      return;
+    }
+    throw err;
+  }
 }
 
 let migrated = null;
@@ -57,3 +111,36 @@ export function ensureMigrated() {
   if (!migrated) migrated = migrate().catch((err) => { migrated = null; throw err; });
   return migrated;
 }
+
+export const pool = {
+  query: (text, params) => query(text, params),
+  connect: async () => {
+    if (usePGlite) {
+      const db = await getPGlite();
+      return {
+        query: (text, params) => db.query(text, params),
+        release: () => {},
+      };
+    }
+    try {
+      return await pgPool.connect();
+    } catch (err) {
+      if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || (err.message && err.message.includes('ECONNREFUSED'))) {
+        usePGlite = true;
+        const db = await getPGlite();
+        await db.exec(schema);
+        return {
+          query: (text, params) => db.query(text, params),
+          release: () => {},
+        };
+      }
+      throw err;
+    }
+  },
+  end: async () => {
+    if (!usePGlite) {
+      await pgPool.end().catch(() => {});
+    }
+  },
+  on: (event, handler) => pgPool.on(event, handler),
+};
