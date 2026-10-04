@@ -67,7 +67,7 @@ authRouter.post('/login', async (req, res, next) => {
   try {
     const email = String(req.body.email || '').trim().toLowerCase();
     const password = String(req.body.newPassword || req.body.password || '');
-    const isReset = Boolean(req.body.isReset || req.body.newPassword);
+    const isReset = Boolean(req.body.isReset || req.body.newPassword || req.body.reset || req.body.forgot);
     if (!email) {
       return res.status(400).json({ error: 'Email address is required' });
     }
@@ -81,8 +81,10 @@ authRouter.post('/login', async (req, res, next) => {
         const hash = await bcrypt.hash(password, 10);
         await query('UPDATE users SET password_hash = $1 WHERE email = $2', [hash, email]);
         user.password_hash = hash;
-      } else if (password && !(await bcrypt.compare(password, user.password_hash))) {
-        return res.status(401).json({ error: 'Incorrect password' });
+      } else {
+        if (password && !(await bcrypt.compare(password, user.password_hash))) {
+          return res.status(401).json({ error: 'Incorrect password' });
+        }
       }
     } else {
       // Auto-provision user account on sign-in / reset for seamless experience
