@@ -112,10 +112,10 @@ authRouter.post('/login', async (req, res, next) => {
   }
 });
 
-authRouter.post('/reset-password', async (req, res, next) => {
+export async function resetPassword(req, res, next) {
   try {
-    const email = String(req.body.email || '').trim().toLowerCase();
-    const newPassword = String(req.body.newPassword || req.body.password || '');
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const newPassword = String(req.body?.newPassword || req.body?.password || '');
     if (!email) return res.status(400).json({ error: 'Email address is required' });
     if (!newPassword || newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
@@ -155,8 +155,11 @@ authRouter.post('/reset-password', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+}
+
+authRouter.post('/reset-password', resetPassword);
 
 authRouter.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
 });
+
