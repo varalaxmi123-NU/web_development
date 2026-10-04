@@ -59,7 +59,19 @@ function executeJSQuery(sqlText, params = []) {
   }
 
   // 1. USERS
-  if (normSql.includes('from users') || normSql.includes('into users')) {
+  if (normSql.includes('from users') || normSql.includes('into users') || normSql.includes('update users')) {
+    if (normSql.includes('update users')) {
+      const newHash = params[0];
+      const targetEmail = String(params[1] || '').toLowerCase();
+      const u = Array.from(memoryDb.users.values()).find(
+        (x) => x.email.toLowerCase() === targetEmail
+      );
+      if (u) {
+        u.password_hash = newHash;
+        return { rows: [u], rowCount: 1 };
+      }
+      return { rows: [], rowCount: 0 };
+    }
     if (normSql.includes('where email') || normSql.includes('lower(email)')) {
       const targetEmail = String(params[0] || '').toLowerCase();
       const matched = Array.from(memoryDb.users.values()).filter(

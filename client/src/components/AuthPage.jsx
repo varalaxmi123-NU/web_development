@@ -3,19 +3,40 @@ import { api } from '../api.js';
 import { Icon, Spinner, BrandLogo } from './ui.jsx';
 
 export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome }) {
-  const [mode, setMode] = useState(initialMode);
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'forgot'
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [busy, setBusy] = useState(false);
 
   const submit = async (e) => {
     e?.preventDefault();
     setError('');
+    setSuccessMsg('');
+
+    if (mode === 'forgot') {
+      if (form.password !== form.confirmPassword) {
+        setError('New passwords do not match');
+        return;
+      }
+    }
+
     setBusy(true);
     try {
-      const body = mode === 'login' ? { email: form.email, password: form.password } : form;
-      const r = await api(`/auth/${mode}`, { method: 'POST', body });
-      onAuthed(r.user, r.token);
+      if (mode === 'forgot') {
+        const r = await api('/auth/reset-password', {
+          method: 'POST',
+          body: { email: form.email, newPassword: form.password },
+        });
+        setSuccessMsg('Password updated successfully! Logging you in...');
+        setTimeout(() => {
+          onAuthed(r.user, r.token);
+        }, 1200);
+      } else {
+        const body = mode === 'login' ? { email: form.email, password: form.password } : form;
+        const r = await api(`/auth/${mode}`, { method: 'POST', body });
+        onAuthed(r.user, r.token);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -97,16 +118,21 @@ export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome
           <div className="auth-seg-control">
             <button
               className={`auth-seg-tab ${mode === 'login' ? 'active' : ''}`}
-              onClick={() => setMode('login')}
+              onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
             >
               Sign in
             </button>
             <button
               className={`auth-seg-tab ${mode === 'register' ? 'active' : ''}`}
-              onClick={() => setMode('register')}
+              onClick={() => { setMode('register'); setError(''); setSuccessMsg(''); }}
             >
               Create account
             </button>
+            {mode === 'forgot' && (
+              <button className="auth-seg-tab active">
+                Reset Password
+              </button>
+            )}
           </div>
 
           <form onSubmit={submit} className="auth-form">
@@ -145,12 +171,14 @@ export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome
 
             <div className="auth-field-group">
               <div className="auth-label-row">
-                <label htmlFor="auth-password">Password</label>
+                <label htmlFor="auth-password">
+                  {mode === 'forgot' ? 'New Password' : 'Password'}
+                </label>
                 {mode === 'login' && (
                   <button
                     type="button"
                     className="auth-forgot-link"
-                    onClick={() => alert('Password reset instructions have been sent to your email.')}
+                    onClick={() => { setMode('forgot'); setError(''); setSuccessMsg(''); }}
                   >
                     Forgot password?
                   </button>
@@ -164,28 +192,72 @@ export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome
                   value={form.password}
                   onChange={set('password')}
                   minLength={6}
-                  placeholder="••••••••"
+                  placeholder={mode === 'forgot' ? 'Enter new password' : '••••••••'}
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   required
                 />
               </div>
             </div>
 
+            {mode === 'forgot' && (
+              <div className="auth-field-group">
+                <label htmlFor="auth-confirm-password">Confirm New Password</label>
+                <div className="auth-input-wrapper">
+                  <Icon name="lock" size={17} className="auth-input-icon" />
+                  <input
+                    id="auth-confirm-password"
+                    type="password"
+                    value={form.confirmPassword}
+                    onChange={set('confirmPassword')}
+                    minLength={6}
+                    placeholder="Confirm new password"
+                    autoComplete="new-password"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
             {error && <div className="auth-form-error">{error}</div>}
+            {successMsg && (
+              <div className="auth-form-error" style={{ background: '#ecfdf5', color: '#059669', borderColor: '#a7f3d0' }}>
+                {successMsg}
+              </div>
+            )}
 
             <button className="auth-primary-btn" disabled={busy}>
               {busy ? (
                 <Spinner size={18} />
               ) : (
                 <>
-                  <span>{mode === 'login' ? 'Sign in' : 'Create account'}</span>
+                  <span>
+                    {mode === 'login'
+                      ? 'Sign in'
+                      : mode === 'register'
+                      ? 'Create account'
+                      : 'Reset Password & Sign in'}
+                  </span>
                   <Icon name="arrowRight" size={16} />
                 </>
               )}
             </button>
+
+            {mode === 'forgot' && (
+              <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                <button
+                  type="button"
+                  className="auth-forgot-link"
+                  onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
+                  style={{ fontSize: '0.875rem' }}
+                >
+                  ← Back to Sign in
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>
     </div>
   );
 }
+

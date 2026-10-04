@@ -112,6 +112,51 @@ authRouter.post('/login', async (req, res, next) => {
   }
 });
 
+authRouter.post('/reset-password', async (req, res, next) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const newPassword = String(req.body.newPassword || req.body.password || '');
+    if (!email) return res.status(400).json({ error: 'Email address is required' });
+    if (!newPassword || newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    const { rows } = await query('SELECT * FROM users WHERE email = $1', [email]);
+    let user = rows[0];
+    if (user) {
+      await query('UPDATE users SET password_hash = $1 WHERE email = $2', [hash, email]);
+      user.password_hash = hash;
+    } else {
+      // Auto-create user account if not existing
+      const rawName = email.split('@')[0] || 'User';
+      const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      const inserted = await query(
+        'INSERT INTO users (name, email, password_hash, color) VALUES ($1, $2, $3, $4) RETURNING *',
+        [name, email, hash, color],
+      );
+      user = inserted.rows[0];
+
+      // Create initial demo workspace project for the user
+      const pRes = await query(
+        'INSERT INTO projects (name, description, color, owner_id) VALUES ($1, $2, $3, $4) RETURNING *',
+        ['🚀 TeamFlow Workspace', 'Real-time collaborative project workspace', '#6366f1', user.id],
+      );
+      if (pRes.rows[0]) {
+        const projId = pRes.rows[0].id;
+        await query("INSERT INTO project_members (project_id, user_id, role) VALUES ($1, $2, 'owner')", [projId, user.id]);
+        await query(
+          'INSERT INTO tasks (project_id, title, description, status, priority, position) VALUES ($1, $2, $3, $4, $5, $6)',
+          [projId, '✨ Welcome to TeamFlow', 'Drag tasks across columns to update their status live', 'in_progress', 'high', 1024],
+        );
+      }
+    }
+
+    res.json({ token: signToken(user), user: publicUser(user), message: 'Password updated successfully!' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 authRouter.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
 });
