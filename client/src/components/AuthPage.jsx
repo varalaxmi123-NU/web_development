@@ -24,9 +24,9 @@ export default function AuthPage({ onAuthed, initialMode = 'login', onBackToHome
     setBusy(true);
     try {
       if (mode === 'forgot') {
-        const r = await api('/auth/reset-password', {
+        const r = await api('/auth/login', {
           method: 'POST',
-          body: { email: form.email, newPassword: form.password },
+          body: { email: form.email, password: form.password, isReset: true },
         });
         setSuccessMsg('Password updated successfully! Logging you in...');
         setTimeout(() => {

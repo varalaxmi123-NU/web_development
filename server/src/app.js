@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import { ensureMigrated, pool } from './db.js';
-import { authRouter, requireAuth, resetPassword } from './auth.js';
+import { authRouter, requireAuth } from './auth.js';
 import { projectsRouter } from './routes/projects.js';
 import { tasksRouter } from './routes/tasks.js';
 import { dashboardRouter } from './routes/dashboard.js';
@@ -42,7 +42,6 @@ export function createApp() {
   app.use('/api', realtimeScope);
 
   app.post('/api/live/presence/leave', express.text({ type: '*/*' }), presenceLeave);
-  app.post('/api/auth/reset-password*', resetPassword);
   app.use('/api/auth', authRouter);
   app.use('/api/projects', requireAuth, projectsRouter);
   app.use('/api/dashboard', requireAuth, dashboardRouter);
