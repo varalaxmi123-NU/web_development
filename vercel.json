@@ -8,7 +8,8 @@
     "api/index.js": { "maxDuration": 30 }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.js" }
+    { "source": "/api/:path*", "destination": "/api?__path=:path*" }
   ]
 }
+
 

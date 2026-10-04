@@ -1,4 +1,5 @@
 // Vercel serverless entry: the whole Express API runs as one function.
+// vercel.json rewrites /api/<path> to this function as /api?__path=<path>.
 import { createApp, finishApp } from '../server/src/app.js';
 
 const app = finishApp(createApp());
@@ -10,9 +11,8 @@ export default function handler(req, res) {
     url.searchParams.delete('__path');
     const qs = url.searchParams.toString();
     req.url = `/api/${p}${qs ? `?${qs}` : ''}`;
-  } else if (!req.url.startsWith('/api')) {
-    req.url = `/api${req.url}`;
   }
   return app(req, res);
 }
+
 
