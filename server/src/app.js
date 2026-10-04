@@ -42,7 +42,7 @@ export function createApp() {
   app.use('/api', realtimeScope);
 
   app.post('/api/live/presence/leave', express.text({ type: '*/*' }), presenceLeave);
-  app.post('/api/auth/reset-password', resetPassword);
+  app.post('/api/auth/reset-password*', resetPassword);
   app.use('/api/auth', authRouter);
   app.use('/api/projects', requireAuth, projectsRouter);
   app.use('/api/dashboard', requireAuth, dashboardRouter);

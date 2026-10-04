@@ -157,9 +157,10 @@ export async function resetPassword(req, res, next) {
   }
 }
 
-authRouter.post('/reset-password', resetPassword);
+authRouter.post('/reset-password*', resetPassword);
 
 authRouter.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
 });
+
 
