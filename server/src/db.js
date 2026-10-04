@@ -1,6 +1,8 @@
 import pg from 'pg';
 import { PGlite } from '@electric-sql/pglite';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import schema from './schema.js';
 
 // Return DATE columns as 'YYYY-MM-DD' strings instead of JS Dates, so they
@@ -11,7 +13,7 @@ const DB_URL = (process.env.DATABASE_URL || 'postgres://teamflow:teamflow@localh
   .replace(/([?&])sslmode=[^&]*&?/, '$1')
   .replace(/[?&]$/, '');
 const isLocal = /@(localhost|127\.0\.0\.1|db)(:|\/)/.test(DB_URL);
-const serverless = Boolean(process.env.VERCEL);
+const serverless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 
 const pgPool = new pg.Pool({
   connectionString: DB_URL,
@@ -24,15 +26,38 @@ const pgPool = new pg.Pool({
 pgPool.on('error', (err) => console.warn('Postgres idle client error:', err.message));
 
 let pgliteInstance = null;
-let usePGlite = false;
+let usePGlite = !process.env.DATABASE_URL && isLocal && serverless;
 
 async function getPGlite() {
   if (!pgliteInstance) {
-    fs.mkdirSync('./data', { recursive: true });
-    pgliteInstance = new PGlite('./data/pglite');
-    console.log('⚡ Using embedded PGlite database fallback at ./data/pglite');
+    if (serverless) {
+      const tmpDir = path.join(os.tmpdir(), 'pglite');
+      try { fs.mkdirSync(tmpDir, { recursive: true }); } catch { /* ignore */ }
+      pgliteInstance = new PGlite(tmpDir);
+      console.log(`⚡ [Serverless] Using PGlite database in /tmp at ${tmpDir}`);
+    } else {
+      try { fs.mkdirSync('./data', { recursive: true }); } catch { /* ignore */ }
+      pgliteInstance = new PGlite('./data/pglite');
+      console.log('⚡ Using embedded PGlite database fallback at ./data/pglite');
+    }
   }
   return pgliteInstance;
+}
+
+function isConnError(err) {
+  if (!err) return false;
+  const msg = (err.message || '').toLowerCase();
+  const code = err.code || '';
+  return (
+    code === 'ECONNREFUSED' ||
+    code === 'ETIMEDOUT' ||
+    code === 'ENOTFOUND' ||
+    code === 'EAI_AGAIN' ||
+    msg.includes('econnrefused') ||
+    msg.includes('enotfound') ||
+    msg.includes('etimedout') ||
+    msg.includes('connect')
+  );
 }
 
 export async function query(text, params) {
@@ -43,7 +68,7 @@ export async function query(text, params) {
   try {
     return await pgPool.query(text, params);
   } catch (err) {
-    if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || (err.message && err.message.includes('ECONNREFUSED'))) {
+    if (isConnError(err)) {
       usePGlite = true;
       const db = await getPGlite();
       await db.exec(schema);
@@ -76,7 +101,7 @@ export async function tx(fn) {
       client.release();
     }
   } catch (err) {
-    if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || (err.message && err.message.includes('ECONNREFUSED'))) {
+    if (isConnError(err)) {
       usePGlite = true;
       const db = await getPGlite();
       await db.exec(schema);
@@ -95,7 +120,7 @@ export async function migrate() {
   try {
     await pgPool.query(schema);
   } catch (err) {
-    if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || (err.message && err.message.includes('ECONNREFUSED'))) {
+    if (isConnError(err)) {
       usePGlite = true;
       const db = await getPGlite();
       await db.exec(schema);
@@ -125,7 +150,7 @@ export const pool = {
     try {
       return await pgPool.connect();
     } catch (err) {
-      if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || (err.message && err.message.includes('ECONNREFUSED'))) {
+      if (isConnError(err)) {
         usePGlite = true;
         const db = await getPGlite();
         await db.exec(schema);
