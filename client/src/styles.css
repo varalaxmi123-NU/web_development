@@ -270,9 +270,17 @@ textarea { resize: vertical; width: 100%; }
 /* ============================================================
    Shell & Sidebar (Sleek Dark Slate Workspace)
    ============================================================ */
-.shell { display: grid; grid-template-columns: var(--sidebar) 1fr; height: 100%; }
+.shell {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
 
 .sidebar {
+  width: 240px;
+  min-width: 240px;
+  flex: none;
   background: #0B0F19;
   color: #94A3B8;
   display: flex;
@@ -281,6 +289,14 @@ textarea { resize: vertical; width: 100%; }
   gap: 8px;
   min-height: 0;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nav-scrim {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 40;
 }
 
 .sidebar-brand-header {
@@ -727,38 +743,6 @@ textarea { resize: vertical; width: 100%; }
 .statusbar { display: flex; gap: 2px; height: 10px; border-radius: 99px; overflow: hidden; background: var(--surface-3); }
 .statusbar span { min-width: 4px; }
 .statusbar-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px; font-size: 12px; color: var(--text-2); }
-.statusbar-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.statusbar-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-
-.mytasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; max-height: 300px; overflow: auto; }
-.mytasks li { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-radius: var(--radius-sm); cursor: pointer; }
-.mytasks li:hover { background: var(--surface-2); }
-.mt-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.mt-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mt-meta { font-size: 12px; color: var(--text-3); display: inline-flex; align-items: center; gap: 6px; }
-.prio-bar { width: 3px; align-self: stretch; border-radius: 2px; flex: none; }
-.prio-bar.prio-urgent { background: var(--p-urgent); }
-.prio-bar.prio-high { background: var(--p-high); }
-.prio-bar.prio-medium { background: var(--p-medium); }
-.prio-bar.prio-low { background: var(--p-low); }
-
-.proj-rows { display: flex; flex-direction: column; gap: 4px; }
-.proj-row { display: flex; gap: 12px; align-items: flex-start; padding: 10px; border-radius: var(--radius-sm); color: inherit; }
-.proj-row:hover { background: var(--surface-2); }
-.proj-row .proj-dot { margin-top: 4px; }
-.pr-main { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.pr-top { display: flex; justify-content: space-between; }
-.pr-top span { font-weight: 600; font-variant-numeric: tabular-nums; }
-.pr-meta { font-size: 12px; color: var(--text-3); }
-
-.workload { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.workload li { display: grid; grid-template-columns: 24px 96px 1fr auto; align-items: center; gap: 10px; }
-.wl-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wl-bar { height: 8px; background: var(--surface-3); border-radius: 99px; overflow: hidden; }
-.wl-bar span { display: block; height: 100%; border-radius: inherit; transition: width 0.4s; }
-.wl-num { font-weight: 600; font-variant-numeric: tabular-nums; font-size: 13px; }
-.wl-num em { font-style: normal; font-weight: 500; font-size: 12px; }
-
 /* Activity */
 .activity { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .activity li { display: flex; gap: 10px; padding: 9px 6px; border-radius: var(--radius-sm); animation: slide-in 0.25s ease-out; }
